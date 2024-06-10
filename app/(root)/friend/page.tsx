@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Circle, History, Home, X } from "lucide-react";
+import { History, Home } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -20,165 +20,69 @@ const draw = {
   },
 };
 
-const winningLines = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-  [0, 4, 8],
-  [2, 4, 6],
-];
-
-const checkWinner = (board: any[]) => {
-  for (let i = 0; i < winningLines.length; i++) {
-    const [a, b, c] = winningLines[i];
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return board[a];
-    }
-  }
-  if (!board.includes(null)) {
-    return "tie";
-  }
-  return null;
-};
-
-const minimax = (
-  newBoard: any[],
-  player: "O" | "X"
-): { index: number; score: number } => {
-  const availSpots = newBoard.reduce(
-    (acc, val, idx) => (val === null ? acc.concat(idx) : acc),
-    []
-  );
-  const opponent = player === "O" ? "X" : "O";
-
-  const winner = checkWinner(newBoard);
-  if (winner === "O") return { score: 10, index: NaN };
-  if (winner === "X") return { score: -10, index: NaN };
-  if (winner === "tie") return { score: 0, index: NaN };
-
-  const moves = [];
-  for (let i = 0; i < availSpots.length; i++) {
-    const move = {} as { index: number; score: number };
-    move.index = availSpots[i];
-    newBoard[availSpots[i]] = player;
-
-    const result = minimax(newBoard, opponent);
-    move.score = result.score;
-
-    newBoard[availSpots[i]] = null;
-    moves.push(move);
-  }
-
-  let bestMove: number = 0;
-  if (player === "O") {
-    let bestScore = -Infinity;
-    for (let i = 0; i < moves.length; i++) {
-      if (moves[i].score > bestScore) {
-        bestScore = moves[i].score;
-        bestMove = i;
-      }
-    }
-  } else {
-    let bestScore = Infinity;
-    for (let i = 0; i < moves.length; i++) {
-      if (moves[i].score < bestScore) {
-        bestScore = moves[i].score;
-        bestMove = i;
-      }
-    }
-  }
-
-  return moves[bestMove];
-};
-
 export default function FriendPlay() {
-  const [selectPlyer, setSelectPlayer] = useState(
-    () => window && window.localStorage.getItem("player")
-  );
-
   const [scoreGame, setScoreGame] = useState({ x: 0, o: 0 });
+
   const [board, setBoard] = useState(Array(9).fill(null));
   const [currentPlayer, setCurrentPlayer] = useState("X");
-  const [isComputer, setIsComputer] = useState(true);
-
   const handleClick = (index: number) => {
-    console.log(selectPlyer, "hhh");
-    const playerMark = selectPlyer == "0" ? "O" : "X";
-    const playerMarkAI = selectPlyer != "0" ? "O" : "X";
-
-    if (board[index] === null && currentPlayer === playerMark) {
+    if (board[index] === null) {
       const newBoard = [...board];
       newBoard[index] = currentPlayer;
       setBoard(newBoard);
-      setCurrentPlayer(playerMarkAI);
+      setCurrentPlayer(currentPlayer === "X" ? "O" : "X");
     }
   };
-
-  const handleComputerMove = () => {
-    const playerMark = selectPlyer == "0" ? "O" : "X";
-    const playerMarkAI = selectPlyer != "0" ? "O" : "X";
-
-    const newBoard = [...board];
-    const bestMove = minimax(newBoard, playerMarkAI);
-    newBoard[bestMove.index] = playerMarkAI;
-    setBoard(newBoard);
-    setCurrentPlayer(playerMark);
-  };
-
-  useEffect(() => {
-    const playerMarkAI =
-      window?.localStorage.getItem("player") != "0" ? "O" : "X";
-    setSelectPlayer(window?.localStorage.getItem("player"));
-
-    const winner = checkWinner(board);
-    if (winner) {
-      if (winner === "O") {
-        setScoreGame((prevScore) => ({ ...prevScore, o: prevScore.o + 1 }));
-      }
-      if (winner === "X") {
-        setScoreGame((prevScore) => ({ ...prevScore, x: prevScore.x + 1 }));
-      }
-      setTimeout(() => {
-        setBoard(Array(9).fill(null));
-        setCurrentPlayer("X");
-      }, 1000);
-    } else if (currentPlayer === playerMarkAI && isComputer) {
-      setTimeout(handleComputerMove, 500);
-    }
-  }, [board, currentPlayer]);
-
   const handleReset = () => {
     setBoard(Array(9).fill(null));
     setCurrentPlayer("X");
   };
+  const checkWinner = () => {
+    const winningLines = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+    for (let i = 0; i < winningLines.length; i++) {
+      const [a, b, c] = winningLines[i];
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return board[a];
+      }
+    }
+    if (!board.includes(null)) {
+      return "tie";
+    }
+    return null;
+  };
+  const winner = checkWinner();
+
+  useEffect(() => {
+    if (winner === "O") {
+      setScoreGame({ ...scoreGame, o: ++scoreGame.o });
+    }
+    if (winner === "X") {
+      setScoreGame({ ...scoreGame, x: ++scoreGame.x });
+    }
+
+    if (winner) {
+      setTimeout(handleReset, 1000);
+    }
+  }, [winner]);
 
   return (
     <>
       <section className="w-full h-full flex flex-col justify-center items-center">
         <nav className="flex justify-around items-center gap-6 mb-[4rem]">
-          <span className="text-white flex gap-1 items-center">
-            You{" "}
-            {selectPlyer == "0" ? (
-              <Circle className="text-blue-500" strokeWidth={3} />
-            ) : (
-              <X className="text-red-500" strokeWidth={3} />
-            )}
-          </span>
+          <span className="text-white">Player X</span>
           <span className="rounded-lg bg-white px-4 py-1">
-            {scoreGame[selectPlyer == "0" ? "o" : "x"]} -{" "}
-            {scoreGame[selectPlyer == "0" ? "x" : "o"]}
+            {scoreGame.x} - {scoreGame.o}
           </span>
-          <span className="text-white flex gap-1 items-center">
-            AI{" "}
-            {selectPlyer != "0" ? (
-              <Circle className="text-blue-500" strokeWidth={3} />
-            ) : (
-              <X className="text-red-500" strokeWidth={3} />
-            )}
-          </span>
+          <span className="text-white">Player O</span>
         </nav>
         <div className="grid grid-cols-3 gap-4 mb-8">
           {board.map((cell, index) => (
@@ -189,11 +93,7 @@ export default function FriendPlay() {
                   ? "text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900"
                   : "text-blue-500 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900"
               }`}
-              onClick={() => handleClick(index)}
-              disabled={
-                cell !== null ||
-                currentPlayer == (selectPlyer == "0" ? "X" : "O")
-              }>
+              onClick={() => handleClick(index)}>
               {cell === "O" ? (
                 <motion.svg
                   width="80"
@@ -249,11 +149,11 @@ export default function FriendPlay() {
             </button>
           ))}
         </div>
-        <div className="mb-8 text-2xl font-bold text-gray-200">
-          {checkWinner(board) === "tie"
-            ? "It's a tie!"
-            : !!checkWinner(board) && `Player ${checkWinner(board)} wins!`}
-        </div>
+        {winner && (
+          <div className="mb-8 text-2xl font-bold text-gray-200">
+            {winner === "tie" ? "It's a tie!" : `Player ${winner} wins!`}
+          </div>
+        )}
         <div className="mt-[10vh] flex flex-col mx-auto justify-center items-center gap-4 w-[calc(100%-15vw)] max-w-[320px] [&>button]:!text-xl">
           <div className="w-full flex justify-start items-center gap-3">
             <Button

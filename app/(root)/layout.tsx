@@ -12,7 +12,7 @@ const Layout: FC<IProps> = ({ children }) => {
     <Suspense fallback={"loading ..."}>
       <Template>
         <main className={cn("w-full h-screen bg-orange-400 ")}>
-          <div className="container">{children}</div>
+          <div className="container h-full">{children}</div>
         </main>
       </Template>
     </Suspense>

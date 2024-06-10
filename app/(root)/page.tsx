@@ -22,7 +22,7 @@ export default function Home() {
           <Button
             variant={"outline"}
             className="w-full bg-transparent text-border hover:bg-primary/90 hover:border-primary/90 hover:text-orange-400">
-            With a friend
+               <Link href={"/friend"} >With a friend</Link>
           </Button>
         </div>
       </div>
